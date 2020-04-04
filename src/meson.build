@@ -1,0 +1,1 @@
+executable('xD', 'main.cpp')
