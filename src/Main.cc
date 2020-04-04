@@ -1,29 +1,28 @@
-#include <cstdio>
-#include "external/linenoise.hpp"
 #include "Lexer.hh"
+#include "external/linenoise.hpp"
+#include <cstdio>
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     linenoise::SetMultiLine(true);
     linenoise::SetHistoryMaxLen(100);
-    linenoise::SetCompletionCallback([](const char *editBuffer, std::vector<std::string> &completions) {
-        if (editBuffer[0] == 'q')
-        {
-            completions.push_back("quit");
-        }
-    });
+    linenoise::SetCompletionCallback(
+        [](const char* editBuffer, std::vector<std::string>& completions) {
+            if (editBuffer[0] == 'q') {
+                completions.push_back("quit");
+            }
+        });
 
-    while (true)
-    {
+    while (true) {
         std::string line;
         auto quit = linenoise::Readline("> ", line);
 
-        if (quit || line == "quit")
+        if (quit || line == "quit") {
             break;
+        }
 
         Lexer l(line.c_str());
-        if (!l.run())
-        {
+        if (!l.run()) {
             printf("Lexing error!\n");
         }
 

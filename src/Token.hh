@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Common.hh"
+#include <string>
 
-enum Token_Kind : u8
-{
+enum Token_Kind : u8 {
     TOK_EOF = 0,
 
     // ASCII Chars
@@ -21,11 +21,21 @@ enum Token_Kind : u8
 };
 
 struct Token {
-    Token_Kind kind { TOK_INVALID };
+    u8 kind { TOK_INVALID };
+
+    u8* start;
+    u8* end;
 
     union {
         s64 s64_val;
         f64 f64_val;
         bool bool_val;
     };
+
+    Token(u8 kind)
+        : kind(kind)
+    {
+    }
+
+    std::string to_str();
 };

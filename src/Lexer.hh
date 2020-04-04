@@ -1,15 +1,17 @@
 #pragma once
 
-#include <vector>
 #include "Token.hh"
+#include <vector>
 
-struct Lexer
-{
-    const char *input;
+struct Lexer {
+    const u8* input;
     std::vector<Token> output;
 
-    Lexer(const char *input)
-        : input(input), output{}
+    u8* cur;
+
+    Lexer(const char* input)
+        : input((u8*)input)
+        , cur((u8*)input)
     {
     }
 
