@@ -3,8 +3,14 @@ extremely Dumb language
 
 ## Building
 
-```bash
-$ scoop install python ninja
-$ pip install meson
-$ run
+Requirements
+
+```
+> scoop install llvm ninja python
+```
+
+Build and run
+
+```
+> run.bat
 ```
