@@ -9,6 +9,7 @@ bool Lexer::run()
         switch (*cur) {
         case ' ':
         case '\t':
+        case '\r':
         case '\n': {
             ++cur;
             continue;
