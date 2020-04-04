@@ -2,7 +2,7 @@
 set CXX=clang++
 pushd %~dp0
 cd build 2> NUL && goto :build
-meson build || goto :error
+meson build %* || goto :error
 cd build
 :build
 ninja || goto :error

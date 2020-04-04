@@ -1,4 +1,4 @@
 @echo off
 call build || exit /b 1
 echo+
-%~dp0\build\src\xd.exe
+%~dp0\build\src\lang.exe %*

@@ -1,1 +1,4 @@
-test('dummy test', executable('dummy', 'dummy.cpp'))
+test('Lexer test', executable('lexer', [
+    'Test_Lexer.cc',
+    '../src/Lexer.cc',
+]))

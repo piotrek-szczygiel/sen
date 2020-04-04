@@ -1,5 +1,6 @@
-# xD
-extremely Dumb language
+# About
+
+A toy language
 
 ## Building
 
