@@ -15,7 +15,7 @@ int main(int argc, char** argv)
 
     while (true) {
         std::string line;
-        auto quit = linenoise::Readline("> ", line);
+        bool quit = linenoise::Readline("> ", line);
 
         if (quit || line == "quit") {
             break;

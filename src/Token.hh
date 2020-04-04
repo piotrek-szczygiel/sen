@@ -37,5 +37,5 @@ struct Token {
     {
     }
 
-    std::string to_str();
+    std::string to_str() const;
 };

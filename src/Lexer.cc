@@ -87,10 +87,14 @@ bool Lexer::run()
         case '9': {
             Token t(TOK_INT);
             t.start = cur;
+            s64 value = 0;
             while (isdigit(*cur)) {
+                value *= 10;
+                value += *cur - '0';
                 ++cur;
             }
             t.end = cur;
+            t.s64_val = value;
             output.push_back(t);
             break;
         }
@@ -106,7 +110,7 @@ bool Lexer::run()
 
     output.push_back(Token(TOK_EOF));
 
-    for (auto& token : output) {
+    for (const auto& token : output) {
         printf("%s\n", token.to_str().c_str());
     }
 
