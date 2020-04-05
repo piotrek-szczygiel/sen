@@ -5,15 +5,6 @@
 int main(int argc, char** argv)
 {
     if (argc == 1) {
-        linenoise::SetMultiLine(true);
-        linenoise::SetHistoryMaxLen(100);
-        linenoise::SetCompletionCallback(
-            [](const char* editBuffer, std::vector<std::string>& completions) {
-                if (editBuffer[0] == 'q') {
-                    completions.push_back("quit");
-                }
-            });
-
         Lexer lexer;
         while (true) {
             std::string line;
@@ -27,8 +18,6 @@ int main(int argc, char** argv)
             lexer.set_input_from_string(line);
             lexer.lex();
             lexer.free();
-
-            linenoise::AddHistory(line.c_str());
         }
     } else if (argc == 2) {
         const char* filename = argv[1];

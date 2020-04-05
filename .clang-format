@@ -1,5 +1,5 @@
 ---
 Language: Cpp
 BasedOnStyle: WebKit
-ColumnLimit: 100
-AlignTrailingComments: true
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: None

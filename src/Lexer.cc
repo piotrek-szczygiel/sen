@@ -1,6 +1,5 @@
 #include "Lexer.hh"
 #include "Token.hh"
-#include <cstring>
 
 void Lexer::init()
 {
@@ -25,8 +24,12 @@ void Lexer::free()
 void Lexer::set_input_from_string(const std::string& string)
 {
     input_size = string.size();
-    input = new u8[string.size() + 1];
-    strcpy((char*)input, string.c_str());
+    input = new u8[input_size + 1];
+    u8* data = (u8*)string.c_str();
+    for (u64 i = 0; i < input_size; ++i) {
+        input[i] = data[i];
+    }
+    input[input_size] = 0;
     current = input;
 }
 
@@ -74,16 +77,25 @@ inline void Lexer::eat_char(int count)
     }
 }
 
-inline u8 Lexer::peek_char() { return *current; }
+inline u8 Lexer::peek_char()
+{
+    return *current;
+}
 
-inline u8 Lexer::peek_char(int lookahead) { return *(current + lookahead); }
+inline u8 Lexer::peek_char(int lookahead)
+{
+    return *(current + lookahead);
+}
 
 inline bool is_whitespace(u8 c)
 {
     return c == ' ' || c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f';
 }
 
-inline bool is_digit_char(u8 c) { return c >= '0' && c <= '9'; }
+inline bool is_digit_char(u8 c)
+{
+    return c >= '0' && c <= '9';
+}
 
 inline bool is_name_char(u8 c)
 {
@@ -191,8 +203,7 @@ void Lexer::print_info()
         switch (t.kind) {
         case TOK_NAME: {
             std::string name = intern_vector.at(t.interned_name);
-            printf("TOK_NAME [%d:%d - %d:%d] = %llu: '%s'\n", t.l0, t.c0, t.l1, t.c1,
-                t.interned_name, name.c_str());
+            printf("TOK_NAME [%d:%d - %d:%d] = %llu: '%s'\n", t.l0, t.c0, t.l1, t.c1, t.interned_name, name.c_str());
             break;
         }
         default: {
