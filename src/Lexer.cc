@@ -12,6 +12,9 @@ void Lexer::init()
     output.clear();
     intern_map.clear();
     intern_vector.clear();
+
+    // Just making sure that some interned string won't have 0-id by mistake
+    intern_vector.emplace_back("!!! INVALID !!!");
 }
 
 void Lexer::free()
@@ -194,7 +197,7 @@ void Lexer::lex()
     measurer.stop();
     printf("Lexed %d lines in %.2fms (%.2fms / 1kloc)\n", processed_lines, measurer.elapsed(),
         measurer.elapsed() * 1000.0 / processed_lines);
-    // print_info();
+    print_info();
 }
 
 void Lexer::print_info()

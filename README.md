@@ -1,6 +1,6 @@
 # About
 
-A toy language
+Sen programming language (Work in Progress)
 
 ## Building
 
@@ -10,11 +10,11 @@ Requirements
 - [Meson](https://mesonbuild.com/)
 - [Ninja](https://ninja-build.org/)
 
-You can download Meson + Ninja pack for Windows here: https://github.com/mesonbuild/meson/releases
+You can download Meson + Ninja pack for Windows here: https://github.com/mesonbuild/meson/releases  
 Or install it using [scoop](https://scoop.sh/)
 
 ```
-> scoop install llvm ninja python
+> scoop install ninja python
 > pip install meson
 ```
 
@@ -30,5 +30,5 @@ Or on other systems
 ```
 $ meson build
 $ ninja -C build
-$ ./build/src/lang
+$ ./build/src/sen
 ```
