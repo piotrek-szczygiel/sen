@@ -9,8 +9,7 @@ int main(int argc, char** argv)
         while (true) {
             std::string line;
             bool quit = linenoise::Readline("> ", line);
-
-            if (quit || line == "quit") {
+            if (quit) {
                 break;
             }
 
@@ -30,6 +29,7 @@ int main(int argc, char** argv)
             lexer.init();
             lexer.set_input_from_file(file);
             lexer.lex();
+            lexer.print_info();
             lexer.free();
             fclose(file);
         }

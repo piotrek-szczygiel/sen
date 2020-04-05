@@ -3,7 +3,7 @@
 
 void Lexer::init()
 {
-    input_size = -1;
+    input_size = 0;
     input = nullptr;
     current = nullptr;
     current_line = 1;
@@ -12,9 +12,24 @@ void Lexer::init()
     output.clear();
     intern_map.clear();
     intern_vector.clear();
+    interned_keywords.clear();
 
     // Just making sure that some interned string won't have 0-id by mistake
     intern_vector.emplace_back("!!! INVALID !!!");
+
+    std::unordered_map<std::string, Token_Kind> keywords = {
+        { "int", TOK_KEY_INT },
+        { "float", TOK_KEY_FLOAT },
+        { "string", TOK_KEY_STRING },
+        { "fn", TOK_KEY_FN },
+        { "if", TOK_KEY_IF },
+        { "else", TOK_KEY_ELSE },
+        { "return", TOK_KEY_RETURN },
+    };
+
+    for (const auto& k : keywords) {
+        interned_keywords.emplace(intern_string(k.first), k.second);
+    }
 }
 
 void Lexer::free()
@@ -47,18 +62,23 @@ void Lexer::set_input_from_file(FILE* file)
     current = input;
 }
 
-u64 Lexer::intern_string(u8* start, u8* end)
+u64 Lexer::intern_string(const std::string& string)
 {
-    std::string str((char*)start, (size_t)(end - start));
-    auto found = intern_map.find(str);
+    auto found = intern_map.find(string);
     if (found == intern_map.end()) {
         u64 intern = intern_vector.size();
-        intern_vector.emplace_back(str);
-        intern_map.emplace(str, intern);
+        intern_vector.emplace_back(string);
+        intern_map.emplace(string, intern);
         return intern;
     } else {
         return found->second;
     }
+}
+
+u64 Lexer::intern_string(u8* start, u8* end)
+{
+    std::string string((char*)start, (size_t)(end - start));
+    return intern_string(string);
 }
 
 inline void Lexer::eat_char()
@@ -105,20 +125,6 @@ inline bool is_name_char(u8 c)
     return (c >= 'a' && c <= 'z') || (c == '_') || (c >= 'A' && c <= 'Z') || is_digit_char(c);
 }
 
-inline void Lexer::eat_whitespace()
-{
-    while (is_whitespace(peek_char())) {
-        eat_char();
-    }
-}
-
-inline void Lexer::eat_name()
-{
-    while (peek_char() == '_' || is_name_char(peek_char())) {
-        eat_char();
-    }
-}
-
 inline s64 Lexer::eat_int_value()
 {
     s64 value = 0;
@@ -147,7 +153,9 @@ lex:
     // clang-format off
     switch (peek_char()) {
     case ' ': case '\n': case '\r': case '\t': case '\v': case '\f': {
-        eat_whitespace();
+        while (is_whitespace(peek_char())) {
+            eat_char();
+        }
         token.l0 = current_line;
         token.c0 = current_column;
         goto lex;
@@ -159,10 +167,18 @@ lex:
     case 'K': case 'L': case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S':
     case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z': case '_': {
         u8* start = current;
-        eat_name();
+        while (peek_char() == '_' || is_name_char(peek_char())) {
+            eat_char();
+        }
         u8* end = current;
-        token.kind = TOK_NAME;
-        token.interned_name = intern_string(start, end);
+        u64 interned = intern_string(start, end);
+        auto find = interned_keywords.find(interned);
+        if(find == interned_keywords.end()) {
+            token.kind = TOK_ID;
+            token.id = interned;
+        } else {
+            token.kind = find->second;
+        }
         break;
     }
     case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
@@ -170,7 +186,53 @@ lex:
         token.int_value = eat_int_value();
         break;
     }
+    case '"': {
+        eat_char();
+        u8* start = current;
+        while (peek_char() && peek_char() != '"') {
+            eat_char();
+        }
+        if(peek_char() == TOK_EOF) {
+            printf("unterminated string at the eof\n");
+            token.kind = TOK_ERROR;
+            break;
+        }
+        u8* end = current;
+        eat_char();
+        u64 value = intern_string(start, end);
+        token.kind = TOK_STRING;
+        token.string_value = value;
+        break;
+    }
+    case '/': {
+        if(peek_char(1) == '/') {
+            eat_char(2);
+            while(peek_char() && peek_char() != '\n') {
+                eat_char();
+            }
+            goto lex;
+        } else if(peek_char(1) == '*') {
+            eat_char(2);
+            while(peek_char() && peek_char(1)) {
+                if(peek_char() == '*' && peek_char(1) == '/') {
+                    eat_char(2);
+                    goto lex;
+                }
+                eat_char();
+            }
+        }
+        goto ascii_token;
+    }
+    case '-': {
+        if(peek_char(1) == '>') {
+            token.kind = TOK_ARROW;
+            eat_char(2);
+            break;
+        }
+        goto ascii_token;
+    }
     default: {
+    ascii_token:
         token.kind = (Token_Kind)peek_char();
         eat_char();
         break;
@@ -195,28 +257,64 @@ void Lexer::lex()
         output.emplace_back(token);
     }
     measurer.stop();
-    printf("Lexed %d lines in %.2fms (%.2fms / 1kloc)\n", processed_lines, measurer.elapsed(),
+    printf("Lexed %d lines in %.2fms (%.2fms / kloc)\n", processed_lines, measurer.elapsed(),
         measurer.elapsed() * 1000.0 / processed_lines);
-    print_info();
+}
+
+std::string Lexer::token_info(Token* token)
+{
+    switch (token->kind) {
+    case TOK_EOF:
+        return "EOF";
+    case TOK_ID:
+        return "ID<" + intern_vector.at(token->id) + ">";
+    case TOK_INT:
+        return "INT<" + std::to_string(token->int_value) + ">";
+    case TOK_FLOAT:
+        return "FLOAT<" + std::to_string(token->float_value) + ">";
+    case TOK_STRING:
+        return "STRING<" + intern_vector.at(token->string_value) + ">";
+    case TOK_KEY_INT:
+        return "int";
+    case TOK_KEY_FLOAT:
+        return "float";
+    case TOK_KEY_STRING:
+        return "string";
+    case TOK_KEY_FN:
+        return "fn";
+    case TOK_KEY_IF:
+        return "if";
+    case TOK_KEY_ELSE:
+        return "else";
+    case TOK_KEY_RETURN:
+        return "return";
+    case TOK_ARROW:
+        return "->";
+    case TOK_ERROR:
+        return "!!! ERROR !!!";
+    default: {
+        if (token->kind >= 32 && token->kind <= 126) {
+            return "'" + std::string(1, (char)token->kind) + "'";
+        } else {
+            return "ASCII: " + std::to_string((int)token->kind);
+        }
+    }
+    }
 }
 
 void Lexer::print_info()
 {
-    for (const Token& t : output) {
-        switch (t.kind) {
-        case TOK_NAME: {
-            std::string name = intern_vector.at(t.interned_name);
-            printf("TOK_NAME [%d:%d - %d:%d] = %llu: '%s'\n", t.l0, t.c0, t.l1, t.c1, t.interned_name, name.c_str());
-            break;
+    for (Token& t : output) {
+        if (t.kind == '}') {
+            printf("\n");
         }
-        default: {
-            if (t.kind >= 32 && t.kind <= 126) {
-                printf("TOK_ASCII = '%c'\n", t.kind);
-            } else {
-                printf("TOK_ASCII = %d\n", t.kind);
-            }
-            break;
-        }
+        printf("%s", token_info(&t).c_str());
+        if (t.kind == ';' || t.kind == '{') {
+            printf("\n");
+        } else if (t.kind == '}') {
+            printf("\n\n");
+        } else {
+            printf("  ");
         }
     }
 }
