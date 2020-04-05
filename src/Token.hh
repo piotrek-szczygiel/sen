@@ -1,14 +1,13 @@
 #pragma once
 
 #include "Common.hh"
-#include <string>
 
-enum Token_Kind : u8 {
+enum Token_Kind {
     TOK_EOF = 0,
 
-    // ASCII Chars
+    // Reserve ASCII characters for single character tokens
 
-    TOK_NAME = 128,
+    TOK_NAME = 256,
     TOK_INT,
     TOK_FLOAT,
     TOK_IF,
@@ -16,26 +15,26 @@ enum Token_Kind : u8 {
     TOK_WHILE,
     TOK_FN,
 
-    TOK_INVALID,
-    TOK_COUNT,
+    TOK_ERROR,
 };
 
 struct Token {
-    u8 kind { TOK_INVALID };
+    Token_Kind kind = TOK_ERROR;
 
-    u8* start;
-    u8* end;
+    int l0 = 0;
+    int c0 = 0;
+    int l1 = -1;
+    int c1 = -1;
 
     union {
-        s64 s64_val;
-        f64 f64_val;
-        bool bool_val;
+        u64 interned_name;
+
+        s64 int_value;
+        f64 float_value;
+
+        struct {
+            u64 size;
+            u8* data;
+        } string_value;
     };
-
-    Token(u8 kind)
-        : kind(kind)
-    {
-    }
-
-    std::string to_str() const;
 };

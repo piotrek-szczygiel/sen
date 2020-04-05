@@ -1,9 +1,9 @@
 @echo off
-pushd %~dp0\build
+pushd %~dp0\build_release
 ninja || goto :error
 popd
 echo+
-%~dp0\build\src\lang.exe %*
+%~dp0\build_release\src\lang.exe %*
 exit /b 0
 :error
 popd

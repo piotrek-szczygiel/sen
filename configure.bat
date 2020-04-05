@@ -1,8 +1,5 @@
 @echo off
-pushd %~dp0
-meson build %* || goto :error
-popd
-exit /b 0
-:error
-popd
-exit /b 1
+call %~dp0\clean.bat
+meson build
+meson build_release --buildtype release
+meson build_vs --backend vs2019

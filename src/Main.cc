@@ -4,29 +4,46 @@
 
 int main(int argc, char** argv)
 {
-    linenoise::SetMultiLine(true);
-    linenoise::SetHistoryMaxLen(100);
-    linenoise::SetCompletionCallback(
-        [](const char* editBuffer, std::vector<std::string>& completions) {
-            if (editBuffer[0] == 'q') {
-                completions.push_back("quit");
+    if (argc == 1) {
+        linenoise::SetMultiLine(true);
+        linenoise::SetHistoryMaxLen(100);
+        linenoise::SetCompletionCallback(
+            [](const char* editBuffer, std::vector<std::string>& completions) {
+                if (editBuffer[0] == 'q') {
+                    completions.push_back("quit");
+                }
+            });
+
+        Lexer lexer;
+        while (true) {
+            std::string line;
+            bool quit = linenoise::Readline("> ", line);
+
+            if (quit || line == "quit") {
+                break;
             }
-        });
 
-    while (true) {
-        std::string line;
-        bool quit = linenoise::Readline("> ", line);
+            lexer.init();
+            lexer.set_input_from_string(line);
+            lexer.lex();
+            lexer.free();
 
-        if (quit || line == "quit") {
-            break;
+            linenoise::AddHistory(line.c_str());
         }
-
-        Lexer l(line.c_str());
-        if (!l.run()) {
-            printf("Lexing error!\n");
+    } else if (argc == 2) {
+        const char* filename = argv[1];
+        FILE* file = fopen(filename, "rb");
+        if (file == nullptr) {
+            printf("unable to open file: %s\n", filename);
+            return 1;
+        } else {
+            Lexer lexer;
+            lexer.init();
+            lexer.set_input_from_file(file);
+            lexer.lex();
+            lexer.free();
+            fclose(file);
         }
-
-        linenoise::AddHistory(line.c_str());
     }
     return 0;
 }

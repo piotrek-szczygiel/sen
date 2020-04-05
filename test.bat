@@ -1,5 +1,5 @@
 @echo off
-pushd %~dp0\build
+pushd %~dp0\build_release
 ninja test %* || goto :error
 popd
 exit /b 0
