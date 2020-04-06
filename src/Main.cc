@@ -1,10 +1,34 @@
 #include "Lexer.hh"
+#include "Terminal.hh"
+#include "external/CLI11.hpp"
 #include "external/linenoise.hpp"
 #include <cstdio>
 
 int main(int argc, char** argv)
 {
-    if (argc == 1) {
+    term_init();
+
+    CLI::App app { "Sen programming language" };
+
+    bool print_tokens = false;
+    app.add_flag("-t,--tokens", print_tokens, "Print generated tokens");
+
+    bool print_ast = false;
+    app.add_flag("-a,--ast", print_ast, "Print Abstract Syntax Tree");
+
+    std::string filename = "";
+    app.add_option("file", filename, "Source path")->check(CLI::ExistingFile);
+
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError& e) {
+        if (e.get_exit_code() != 0) {
+            term_color_stderr(Color::FG_BR_RED);
+        }
+        return app.exit(e);
+    }
+
+    if (filename == "") {
         Lexer lexer;
         while (true) {
             std::string line;
@@ -16,26 +40,36 @@ int main(int argc, char** argv)
             lexer.init();
             lexer.set_input_from_string(line);
             lexer.lex();
-            lexer.print_info();
+
+            if (print_tokens) {
+                lexer.print_info();
+            }
+
             lexer.free();
         }
-    } else if (argc == 2) {
-        const char* filename = argv[1];
-        FILE* file = fopen(filename, "rb");
+    } else {
+        FILE* file = fopen(filename.c_str(), "rb");
         if (file == nullptr) {
-            printf("unable to open file: %s\n", filename);
+            term_error("unable to open %s\n", filename.c_str());
             return 1;
         } else {
             Lexer lexer;
             lexer.init();
             lexer.set_input_from_file(file);
+            fclose(file);
+
             lexer.lex();
-            printf("Lexed %d lines in %.2fms (%.f kloc/s)\n", lexer.processed_lines, lexer.elapsed,
+
+            term_info("Lexed %d lines in %.2fms (%.f kloc/s)\n", lexer.processed_lines, lexer.elapsed,
                 (double)lexer.processed_lines / (lexer.elapsed / 1000.0) / 1000.0);
 
+            if (print_tokens) {
+                lexer.print_info();
+            }
+
             lexer.free();
-            fclose(file);
         }
+
+        return 0;
     }
-    return 0;
 }

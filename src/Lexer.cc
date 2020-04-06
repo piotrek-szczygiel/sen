@@ -1,4 +1,5 @@
 #include "Lexer.hh"
+#include "Terminal.hh"
 #include "Token.hh"
 
 void Lexer::init()
@@ -135,7 +136,7 @@ inline s64 Lexer::eat_int_value()
         s64 digit = peek_char() - '0';
         eat_char();
         if (value > (INT64_MAX - digit) / 10) {
-            printf("integer is too big\n");
+            term_error("integer is too big\n");
             while (is_digit_char(peek_char())) {
                 eat_char();
             }
@@ -196,7 +197,7 @@ lex:
             eat_char();
         }
         if(peek_char() == TOK_EOF) {
-            printf("unterminated string at the eof\n");
+            term_error("unterminated string at the eof\n");
             token.kind = TOK_ERROR;
             break;
         }
@@ -266,44 +267,44 @@ std::string Lexer::token_info(Token* token)
 {
     switch (token->kind) {
     case TOK_EOF:
-        return "EOF";
+        return "TOK_EOF";
     case TOK_ID:
-        return "ID<" + intern_vector.at(token->id) + ">";
+        return "TOK_ID<" + intern_vector.at(token->id) + ">";
     case TOK_INT:
-        return "INT<" + std::to_string(token->int_value) + ">";
+        return "TOK_INT<" + std::to_string(token->int_value) + ">";
     case TOK_FLOAT:
-        return "FLOAT<" + std::to_string(token->float_value) + ">";
+        return "TOK_FLOAT<" + std::to_string(token->float_value) + ">";
     case TOK_STRING:
-        return "STRING<" + intern_vector.at(token->string_value) + ">";
+        return "TOK_STRING<" + intern_vector.at(token->string_value) + ">";
     case TOK_KEY_INT:
-        return "int";
+        return "TOK_KEY_INT";
     case TOK_KEY_FLOAT:
-        return "float";
+        return "TOK_KEY_FLOAT";
     case TOK_KEY_STRING:
-        return "string";
+        return "TOK_KEY_STRING";
     case TOK_KEY_BOOL:
-        return "bool";
+        return "TOK_KEY_BOOL";
     case TOK_KEY_TRUE:
-        return "true";
+        return "TOK_KEY_TRUE";
     case TOK_KEY_FALSE:
-        return "false";
+        return "TOK_KEY_FALSE";
     case TOK_KEY_FN:
-        return "fn";
+        return "TOK_KEY_FN";
     case TOK_KEY_IF:
-        return "if";
+        return "TOK_KEY_IF";
     case TOK_KEY_ELSE:
-        return "else";
+        return "TOK_KEY_ELSE";
     case TOK_KEY_RETURN:
-        return "return";
+        return "TOK_KEY_RETURN";
     case TOK_ARROW:
-        return "->";
+        return "TOK_KEY_ARROW";
     case TOK_ERROR:
-        return "!!! ERROR !!!";
+        return "TOK_ERROR";
     default: {
         if (token->kind >= 32 && token->kind <= 126) {
-            return "'" + std::string(1, (char)token->kind) + "'";
+            return std::string(1, (char)token->kind);
         } else {
-            return "ASCII: " + std::to_string((int)token->kind);
+            return "ascii<" + std::to_string((int)token->kind) + ">";
         }
     }
     }
@@ -312,6 +313,6 @@ std::string Lexer::token_info(Token* token)
 void Lexer::print_info()
 {
     for (Token& t : output) {
-        printf("%s\n", token_info(&t).c_str());
+        term_info("%s\n", token_info(&t).c_str());
     }
 }
