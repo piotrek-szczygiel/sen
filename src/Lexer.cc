@@ -21,6 +21,9 @@ void Lexer::init()
         { "int", TOK_KEY_INT },
         { "float", TOK_KEY_FLOAT },
         { "string", TOK_KEY_STRING },
+        { "bool", TOK_KEY_BOOL },
+        { "true", TOK_KEY_TRUE },
+        { "false", TOK_KEY_FALSE },
         { "fn", TOK_KEY_FN },
         { "if", TOK_KEY_IF },
         { "else", TOK_KEY_ELSE },
@@ -247,7 +250,6 @@ lex:
 
 void Lexer::lex()
 {
-    Time_Measurer measurer;
     measurer.start();
     while (true) {
         Token token = eat_token();
@@ -257,8 +259,7 @@ void Lexer::lex()
         output.emplace_back(token);
     }
     measurer.stop();
-    printf("Lexed %d lines in %.2fms (%.2fms / kloc)\n", processed_lines, measurer.elapsed(),
-        measurer.elapsed() * 1000.0 / processed_lines);
+    elapsed = measurer.elapsed();
 }
 
 std::string Lexer::token_info(Token* token)
@@ -280,6 +281,12 @@ std::string Lexer::token_info(Token* token)
         return "float";
     case TOK_KEY_STRING:
         return "string";
+    case TOK_KEY_BOOL:
+        return "bool";
+    case TOK_KEY_TRUE:
+        return "true";
+    case TOK_KEY_FALSE:
+        return "false";
     case TOK_KEY_FN:
         return "fn";
     case TOK_KEY_IF:
@@ -305,16 +312,6 @@ std::string Lexer::token_info(Token* token)
 void Lexer::print_info()
 {
     for (Token& t : output) {
-        if (t.kind == '}') {
-            printf("\n");
-        }
-        printf("%s", token_info(&t).c_str());
-        if (t.kind == ';' || t.kind == '{') {
-            printf("\n");
-        } else if (t.kind == '}') {
-            printf("\n\n");
-        } else {
-            printf("  ");
-        }
+        printf("%s\n", token_info(&t).c_str());
     }
 }

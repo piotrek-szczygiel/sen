@@ -33,7 +33,9 @@ struct Lexer {
     int current_line;
     int current_column;
 
+    Time_Measurer measurer;
     int processed_lines;
+    double elapsed;
 
     std::vector<Token> output;
 

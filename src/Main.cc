@@ -16,6 +16,7 @@ int main(int argc, char** argv)
             lexer.init();
             lexer.set_input_from_string(line);
             lexer.lex();
+            lexer.print_info();
             lexer.free();
         }
     } else if (argc == 2) {
@@ -29,7 +30,9 @@ int main(int argc, char** argv)
             lexer.init();
             lexer.set_input_from_file(file);
             lexer.lex();
-            lexer.print_info();
+            printf("Lexed %d lines in %.2fms (%.f kloc/s)\n", lexer.processed_lines, lexer.elapsed,
+                (double)lexer.processed_lines / (lexer.elapsed / 1000.0) / 1000.0);
+
             lexer.free();
             fclose(file);
         }

@@ -19,6 +19,10 @@ enum Token_Kind {
     TOK_KEY_INT,
     TOK_KEY_FLOAT,
     TOK_KEY_STRING,
+    TOK_KEY_BOOL,
+    TOK_KEY_TRUE,
+    TOK_KEY_FALSE,
+
     TOK_KEY_FN,
     TOK_KEY_IF,
     TOK_KEY_ELSE,
