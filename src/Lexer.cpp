@@ -1,6 +1,6 @@
-#include "Lexer.hh"
-#include "Terminal.hh"
-#include "Token.hh"
+#include "Lexer.h"
+#include "Terminal.h"
+#include "Token.h"
 
 void Lexer::init()
 {
@@ -14,10 +14,10 @@ void Lexer::init()
     intern_map.clear();
     intern_vector.clear();
     interned_keywords.clear();
-
+    
     // Just making sure that some interned string won't have 0-id by mistake
     intern_vector.emplace_back("!!! INVALID !!!");
-
+    
     std::unordered_map<std::string, Token_Kind> keywords = {
         { "int", TOK_KEY_INT },
         { "float", TOK_KEY_FLOAT },
@@ -30,7 +30,7 @@ void Lexer::init()
         { "else", TOK_KEY_ELSE },
         { "return", TOK_KEY_RETURN },
     };
-
+    
     for (const auto& k : keywords) {
         interned_keywords.emplace(intern_string(k.first), k.second);
     }
@@ -152,98 +152,98 @@ Token Lexer::eat_token()
     Token token;
     token.l0 = current_line;
     token.c0 = current_column;
-
-lex:
+    
+    lex:
     // clang-format off
     switch (peek_char()) {
-    case ' ': case '\n': case '\r': case '\t': case '\v': case '\f': {
-        while (is_whitespace(peek_char())) {
-            eat_char();
-        }
-        token.l0 = current_line;
-        token.c0 = current_column;
-        goto lex;
-    }
-    case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i':
-    case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-    case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z': case 'A':
-    case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J':
-    case 'K': case 'L': case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S':
-    case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z': case '_': {
-        u8* start = current;
-        while (peek_char() == '_' || is_name_char(peek_char())) {
-            eat_char();
-        }
-        u8* end = current;
-        u64 interned = intern_string(start, end);
-        auto find = interned_keywords.find(interned);
-        if(find == interned_keywords.end()) {
-            token.kind = TOK_ID;
-            token.id = interned;
-        } else {
-            token.kind = find->second;
-        }
-        break;
-    }
-    case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
-        token.kind = TOK_INT;
-        token.int_value = eat_int_value();
-        break;
-    }
-    case '"': {
-        eat_char();
-        u8* start = current;
-        while (peek_char() && peek_char() != '"') {
-            eat_char();
-        }
-        if(peek_char() == TOK_EOF) {
-            term_error("unterminated string at the eof\n");
-            token.kind = TOK_ERROR;
-            break;
-        }
-        u8* end = current;
-        eat_char();
-        u64 value = intern_string(start, end);
-        token.kind = TOK_STRING;
-        token.string_value = value;
-        break;
-    }
-    case '/': {
-        if(peek_char(1) == '/') {
-            eat_char(2);
-            while(peek_char() && peek_char() != '\n') {
+        case ' ': case '\n': case '\r': case '\t': case '\v': case '\f': {
+            while (is_whitespace(peek_char())) {
                 eat_char();
             }
+            token.l0 = current_line;
+            token.c0 = current_column;
             goto lex;
-        } else if(peek_char(1) == '*') {
-            eat_char(2);
-            while(peek_char() && peek_char(1)) {
-                if(peek_char() == '*' && peek_char(1) == '/') {
-                    eat_char(2);
-                    goto lex;
-                }
+        }
+        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i':
+        case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+        case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z': case 'A':
+        case 'B': case 'C': case 'D': case 'E': case 'F': case 'G': case 'H': case 'I': case 'J':
+        case 'K': case 'L': case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R': case 'S':
+        case 'T': case 'U': case 'V': case 'W': case 'X': case 'Y': case 'Z': case '_': {
+            u8* start = current;
+            while (peek_char() == '_' || is_name_char(peek_char())) {
                 eat_char();
             }
-        }
-        goto ascii_token;
-    }
-    case '-': {
-        if(peek_char(1) == '>') {
-            token.kind = TOK_ARROW;
-            eat_char(2);
+            u8* end = current;
+            u64 interned = intern_string(start, end);
+            auto find = interned_keywords.find(interned);
+            if(find == interned_keywords.end()) {
+                token.kind = TOK_ID;
+                token.id = interned;
+            } else {
+                token.kind = find->second;
+            }
             break;
         }
-        goto ascii_token;
-    }
-    default: {
-    ascii_token:
-        token.kind = (Token_Kind)peek_char();
-        eat_char();
-        break;
-    }
+        case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': {
+            token.kind = TOK_INT;
+            token.int_value = eat_int_value();
+            break;
+        }
+        case '"': {
+            eat_char();
+            u8* start = current;
+            while (peek_char() && peek_char() != '"') {
+                eat_char();
+            }
+            if(peek_char() == TOK_EOF) {
+                term_error("unterminated string at the eof\n");
+                token.kind = TOK_ERROR;
+                break;
+            }
+            u8* end = current;
+            eat_char();
+            u64 value = intern_string(start, end);
+            token.kind = TOK_STRING;
+            token.string_value = value;
+            break;
+        }
+        case '/': {
+            if(peek_char(1) == '/') {
+                eat_char(2);
+                while(peek_char() && peek_char() != '\n') {
+                    eat_char();
+                }
+                goto lex;
+            } else if(peek_char(1) == '*') {
+                eat_char(2);
+                while(peek_char() && peek_char(1)) {
+                    if(peek_char() == '*' && peek_char(1) == '/') {
+                        eat_char(2);
+                        goto lex;
+                    }
+                    eat_char();
+                }
+            }
+            goto ascii_token;
+        }
+        case '-': {
+            if(peek_char(1) == '>') {
+                token.kind = TOK_ARROW;
+                eat_char(2);
+                break;
+            }
+            goto ascii_token;
+        }
+        default: {
+            ascii_token:
+            token.kind = (Token_Kind)peek_char();
+            eat_char();
+            break;
+        }
     }
     // clang-format on
-
+    
     token.l1 = current_line;
     token.c1 = current_column;
     return token;
@@ -266,47 +266,47 @@ void Lexer::lex()
 std::string Lexer::token_info(Token* token)
 {
     switch (token->kind) {
-    case TOK_EOF:
+        case TOK_EOF:
         return "TOK_EOF";
-    case TOK_ID:
+        case TOK_ID:
         return "TOK_ID<" + intern_vector.at(token->id) + ">";
-    case TOK_INT:
+        case TOK_INT:
         return "TOK_INT<" + std::to_string(token->int_value) + ">";
-    case TOK_FLOAT:
+        case TOK_FLOAT:
         return "TOK_FLOAT<" + std::to_string(token->float_value) + ">";
-    case TOK_STRING:
+        case TOK_STRING:
         return "TOK_STRING<" + intern_vector.at(token->string_value) + ">";
-    case TOK_KEY_INT:
+        case TOK_KEY_INT:
         return "TOK_KEY_INT";
-    case TOK_KEY_FLOAT:
+        case TOK_KEY_FLOAT:
         return "TOK_KEY_FLOAT";
-    case TOK_KEY_STRING:
+        case TOK_KEY_STRING:
         return "TOK_KEY_STRING";
-    case TOK_KEY_BOOL:
+        case TOK_KEY_BOOL:
         return "TOK_KEY_BOOL";
-    case TOK_KEY_TRUE:
+        case TOK_KEY_TRUE:
         return "TOK_KEY_TRUE";
-    case TOK_KEY_FALSE:
+        case TOK_KEY_FALSE:
         return "TOK_KEY_FALSE";
-    case TOK_KEY_FN:
+        case TOK_KEY_FN:
         return "TOK_KEY_FN";
-    case TOK_KEY_IF:
+        case TOK_KEY_IF:
         return "TOK_KEY_IF";
-    case TOK_KEY_ELSE:
+        case TOK_KEY_ELSE:
         return "TOK_KEY_ELSE";
-    case TOK_KEY_RETURN:
+        case TOK_KEY_RETURN:
         return "TOK_KEY_RETURN";
-    case TOK_ARROW:
+        case TOK_ARROW:
         return "TOK_KEY_ARROW";
-    case TOK_ERROR:
+        case TOK_ERROR:
         return "TOK_ERROR";
-    default: {
-        if (token->kind >= 32 && token->kind <= 126) {
-            return std::string(1, (char)token->kind);
-        } else {
-            return "ascii<" + std::to_string((int)token->kind) + ">";
+        default: {
+            if (token->kind >= 32 && token->kind <= 126) {
+                return std::string(1, (char)token->kind);
+            } else {
+                return "ascii<" + std::to_string((int)token->kind) + ">";
+            }
         }
-    }
     }
 }
 

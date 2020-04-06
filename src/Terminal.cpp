@@ -1,4 +1,4 @@
-#include "Terminal.hh"
+#include "Terminal.h"
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -27,11 +27,11 @@ void term_init()
 #ifdef _WIN32
     HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
     HANDLE hStderr = GetStdHandle(STD_ERROR_HANDLE);
-
+    
     enable_windows_colors(hStdout);
     enable_windows_colors(hStderr);
 #endif
-
+    
     std::atexit(term_reset);
 }
 

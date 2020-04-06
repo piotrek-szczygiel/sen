@@ -1,7 +1,7 @@
 src = [
-    'Main.cc',
-    'Terminal.cc',
-    'Lexer.cc',
+    'Main.cpp',
+    'Terminal.cpp',
+    'Lexer.cpp',
 ]
 
 executable('sen', src)
