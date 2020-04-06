@@ -15,9 +15,6 @@ void Lexer::init()
     intern_vector.clear();
     interned_keywords.clear();
     
-    // Just making sure that some interned string won't have 0-id by mistake
-    intern_vector.emplace_back("!!! INVALID !!!");
-    
     std::unordered_map<std::string, Token_Kind> keywords = {
         { "int", TOK_KEY_INT },
         { "float", TOK_KEY_FLOAT },
@@ -30,7 +27,6 @@ void Lexer::init()
         { "else", TOK_KEY_ELSE },
         { "return", TOK_KEY_RETURN },
     };
-    
     for (const auto& k : keywords) {
         interned_keywords.emplace(intern_string(k.first), k.second);
     }

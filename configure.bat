@@ -2,6 +2,8 @@
 if [%1]==[] goto usage
 for /f "tokens=1,* delims= " %%a in ("%*") do set MESON_ARGS=%%b
 
+call vs.cmd
+
 if "%1"=="debug" (
     rd /s /q %~dp0\out\debug 2> NUL
     meson %~dp0\out\debug %MESON_ARGS%

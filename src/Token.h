@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common.hh"
+#include "Common.h"
 #include <string>
 #include <unordered_map>
 #include <vector>

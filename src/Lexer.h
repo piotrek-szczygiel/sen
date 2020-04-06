@@ -1,6 +1,6 @@
 #pragma once
-#include "Common.hh"
-#include "Token.hh"
+#include "Common.h"
+#include "Token.h"
 #include <unordered_map>
 #include <vector>
 
