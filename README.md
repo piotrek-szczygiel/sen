@@ -18,17 +18,16 @@ Or install it using [scoop](https://scoop.sh/)
 > pip install meson
 ```
 
-Build and run on Windows
+Build and run on Windows from VS Developer Command Prompt
 
 ```
-> configure.bat
-> run.bat
+> run release
 ```
 
 Or on other systems
 
 ```
-$ meson build
-$ ninja -C build
-$ ./build/src/sen
+$ meson out --buildtype release
+$ ninja -C out
+$ ./out/src/sen
 ```
