@@ -1,5 +1,0 @@
----
-Language: Cpp
-BasedOnStyle: WebKit
-ColumnLimit: 120
-AllowShortFunctionsOnASingleLine: None

@@ -10,7 +10,7 @@ patterns = {
 "*.4coder",
 };
 blacklist_patterns = {
-".*","out",
+".*",
 };
 load_paths_base = {
  { ".", .relative = true, .recursive = true, },
@@ -25,7 +25,13 @@ command_list = {
  { .name = "build",
    .out = "*compilation*", .footer_panel = true, .save_dirty_files = true,
    .cmd = { { "build.bat" , .os = "win"   },
-            { "ninja -C out", .os = "linux" },
-            { "ninja -C out", .os = "mac"   }, }, },
+            { "./build.sh", .os = "linux" },
+            { "./build.sh", .os = "mac"   }, }, },
+ { .name = "run",
+   .out = "*run*", .footer_panel = false, .save_dirty_files = false,
+   .cmd = { { "out\\sen", .os = "win"   },
+            { "out/sen" , .os = "linux" },
+            { "out/sen" , .os = "mac"   }, }, },
 };
 fkey_command[1] = "build";
+fkey_command[2] = "run";
