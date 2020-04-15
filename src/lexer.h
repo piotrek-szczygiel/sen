@@ -21,6 +21,7 @@ struct Lexer {
     Interned_String eat_string();
 
     Interned_String intern_string(const std::string &str);
+    const char *unintern_string(Interned_String id);
 
     const byte *input;
     const byte *cc;

@@ -44,7 +44,11 @@ int main(int argc, char **argv) {
     lexer.lex();
 
     for (const auto &token : lexer.tokens) {
-        printf("%s\n", token.info().c_str());
+        printf("%s", token.info().c_str());
+        if (token.kind == TOK_IDENT || token.kind == TOK_STR) {
+            printf(" \"%s\"", lexer.unintern_string(token.v_str));
+        }
+        printf("\n");
     }
 
     return 0;

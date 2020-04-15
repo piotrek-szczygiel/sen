@@ -138,6 +138,11 @@ Interned_String Lexer::intern_string(const std::string &str) {
     }
 }
 
+const char *Lexer::unintern_string(Interned_String id) {
+    if (id >= interned_vec.size()) return nullptr;
+    return interned_vec[id].c_str();
+}
+
 void Lexer::lex() {
     pos.line = 1;
     pos.column = 1;
@@ -229,7 +234,9 @@ void Lexer::lex() {
 
         default: {
             if (valid_ident_start(peek())) {
+                const byte *ident_start = cc;
                 eat_ident();
+                token.v_str = intern_string(std::string(ident_start, cc));
                 token.kind = TOK_IDENT;
             } else {
                 token.kind = TOK_ERR;
