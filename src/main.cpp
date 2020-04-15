@@ -4,24 +4,18 @@
 #include <cstdio>
 #include <cstdlib>
 
-static byte *read_whole_file(const char *filename) {
-    FILE *file;
-    auto err = fopen_s(&file, filename, "rb");
-    if (err != 0) return nullptr;
-    defer { fclose(file); };
-
+static byte *read_whole_file(FILE *file) {
     fseek(file, 0L, SEEK_END);
     u64 file_size = ftell(file);
     rewind(file);
 
-    u64 buf_size = file_size + 1;
-    byte *buf = (byte *)malloc(buf_size);
+    byte *buf = (byte *)malloc(file_size + 1);
     if (!buf) return nullptr;
 
-    u64 read_size = fread_s(buf, buf_size, 1, file_size, file);
+    u64 read_size = fread(buf, 1, file_size, file);
     if (read_size != file_size) return nullptr;
 
-    buf[buf_size - 1] = 0;
+    buf[read_size] = 0;
     return buf;
 }
 
@@ -32,17 +26,25 @@ int main(int argc, char **argv) {
     }
 
     const char *filename = argv[1];
-    byte *input = read_whole_file(filename);
-    if (!input) {
-        logger("unable to open file: %s", filename);
+
+    FILE *file;
+    auto err = fopen_s(&file, filename, "rb");
+    if (err != 0) {
+        logger("unable to open file: %s\n", filename);
         return 1;
     }
 
-    defer { free(input); };
+    byte *input = read_whole_file(file);
+    fclose(file);
+    if (!input) {
+        logger("unable to read file: %s\n", filename);
+        return 1;
+    }
 
     Lexer lexer(input);
     lexer.lex();
     lexer.print_tokens();
 
+    free(input);
     return 0;
 }

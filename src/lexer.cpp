@@ -6,36 +6,36 @@
 
 namespace chrono = std::chrono;
 
-static inline bool valid_ident_start(byte cc) {
-    return ((cc >= 'A' && cc <= 'Z') || (cc >= 'a' && cc <= 'z') ||
-            (cc == '_') || (cc >= 0xC0));
+static inline bool valid_ident_start(byte b) {
+    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b == '_') ||
+            (b >= 0xC0));
 }
 
-static inline bool valid_ident_continuation(byte cc) {
-    return ((cc >= 'A' && cc <= 'Z') || (cc >= 'a' && cc <= 'z') ||
-            (cc >= '0' && cc <= '9') || (cc == '_') || (cc >= 0x80));
+static inline bool valid_ident_continuation(byte b) {
+    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') ||
+            (b >= '0' && b <= '9') || (b == '_') || (b >= 0x80));
 }
 
-static inline bool valid_number(byte cc) {
-    return (cc >= '0' && cc <= '9');
+static inline bool valid_number(byte b) {
+    return (b >= '0' && b <= '9');
 }
 
 inline byte Lexer::peek() {
-    return *cc;
+    return *cur;
 }
 
 inline byte Lexer::peek(int offset) {
-    return *(cc + offset);
+    return *(cur + offset);
 }
 
 inline byte Lexer::eat() {
     pos.column++;
-    return *cc++;
+    return *cur++;
 }
 
 inline void Lexer::eat(int offset) {
     pos.column += offset;
-    cc += offset;
+    cur += offset;
 }
 
 inline void Lexer::eat_whitespace() {
@@ -48,8 +48,8 @@ inline void Lexer::eat_whitespace() {
 
         case '\n':
         case '\r': {
-            byte c = eat();
-            if (c + peek() == '\r' + '\n') eat();
+            byte b = eat();
+            if (b + peek() == '\r' + '\n') eat();
             pos.line++;
             pos.column = 1;
         } break;
@@ -63,8 +63,14 @@ inline void Lexer::eat_ident() {
     while (valid_ident_continuation(peek())) eat();
 }
 
-inline u64 Lexer::eat_number(Token *token, u64 max) {
+inline void Lexer::eat_number(Token *token) {
+    if (token->kind != TOK_I64) {
+        logger("unimplemented number kind\n");
+        return;
+    }
+
     u64 value = 0;
+    u64 max = INT64_MAX;
 
     while (valid_number(peek())) {
         u64 digit = eat() - '0';
@@ -78,7 +84,7 @@ inline u64 Lexer::eat_number(Token *token, u64 max) {
         value = value * 10 + digit;
     }
 
-    return value;
+    token->v_i64 = value;
 }
 
 inline Interned_String Lexer::eat_string() {
@@ -122,6 +128,7 @@ inline Interned_String Lexer::eat_string() {
     if (closed) {
         return intern_string(ss.str());
     } else {
+        // NOTE id of 0 should be considered invalid string
         return 0;
     }
 }
@@ -159,19 +166,19 @@ void Lexer::lex() {
 
     interned_map.clear();
     interned_vec.clear();
-    // NOTE intern_string() returns 0 on invalid string
+    // NOTE eat_string() returns 0 on invalid string
     intern_string("@@@ INVALID STRING @@@");
 
     tokens.clear();
 
-    auto timer_start = std::chrono::system_clock::now();
+    auto t1 = std::chrono::system_clock::now();
 
     while (peek()) {
         eat_whitespace();
 
         Token token;
         token.pos = pos;
-        token.start = cc;
+        token.start = cur;
 
         switch (peek()) {
         case '\0': {
@@ -233,7 +240,7 @@ void Lexer::lex() {
         case '8':
         case '9': {
             token.kind = TOK_I64;
-            token.v_i64 = eat_number(&token, INT64_MAX);
+            eat_number(&token);
         } break;
 
         case '"': {
@@ -244,9 +251,8 @@ void Lexer::lex() {
 
         default: {
             if (valid_ident_start(peek())) {
-                const byte *ident_start = cc;
                 eat_ident();
-                token.v_str = intern_string(std::string(ident_start, cc));
+                token.v_str = intern_string(std::string(token.start, cur));
                 token.kind = TOK_IDENT;
             } else {
                 token.kind = TOK_ERR;
@@ -256,17 +262,16 @@ void Lexer::lex() {
         } break;
         }
 
-        token.end = cc;
+        token.end = cur;
         if (token.kind == TOK_EOF) break;
 
         tokens.push_back(token);
     }
 
-    auto timer_stop = chrono::system_clock::now();
-    auto elapsed =
-        chrono::duration_cast<chrono::microseconds>(timer_stop - timer_start);
+    auto t2 = chrono::system_clock::now();
+    auto elapsed = chrono::duration_cast<chrono::microseconds>(t2 - t1);
     auto ms = (f64)elapsed.count() / 1000.0;
-    f64 kloc = (f64)pos.line / ms;
+    f64 lpms = (f64)pos.line / ms;
 
-    logger("lexed %d lines in %.2fms (%.0f lines/ms)\n", pos.line, ms, kloc);
+    logger("lexed %d lines in %.2fms (%.0f lines/ms)\n", pos.line, ms, lpms);
 }

@@ -6,7 +6,7 @@
 #include <vector>
 
 struct Lexer {
-    Lexer(const byte *input) : input(input), cc(input) {}
+    Lexer(const byte *input) : input(input), cur(input) {}
 
     void lex();
 
@@ -17,7 +17,7 @@ struct Lexer {
 
     void eat_whitespace();
     void eat_ident();
-    u64 eat_number(Token *token, u64 max);
+    void eat_number(Token *token);
     Interned_String eat_string();
 
     Interned_String intern_string(const std::string &str);
@@ -26,7 +26,7 @@ struct Lexer {
     void print_tokens();
 
     const byte *input;
-    const byte *cc;
+    const byte *cur;
 
     File_Position pos;
 
