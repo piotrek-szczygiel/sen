@@ -2,4 +2,8 @@
 Language: Cpp
 BasedOnStyle: LLVM
 IndentWidth: 4
-ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
