@@ -2,6 +2,7 @@
 #include "common.h"
 #include "token.h"
 
+#include <unordered_map>
 #include <vector>
 
 struct Lexer {
@@ -9,14 +10,6 @@ struct Lexer {
 
     void lex();
 
-    const byte *input;
-    const byte *cc;
-
-    File_Position pos;
-
-    std::vector<Token> tokens;
-
-  private:
     byte peek();
     byte peek(int offset);
     byte eat();
@@ -24,6 +17,18 @@ struct Lexer {
 
     void eat_whitespace();
     void eat_ident();
-    void eat_number();
-    void eat_string();
+    u64 eat_number(Token *token, u64 max);
+    Interned_String eat_string();
+
+    Interned_String intern_string(const std::string &str);
+
+    const byte *input;
+    const byte *cc;
+
+    File_Position pos;
+
+    std::unordered_map<std::string, Interned_String> interned_map;
+    std::vector<std::string> interned_vec;
+
+    std::vector<Token> tokens;
 };

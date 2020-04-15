@@ -17,6 +17,8 @@ using byte = uint8_t;
 using f64 = double;
 using f32 = float;
 
+using Interned_String = u64;
+
 // Go-like defer macro
 #define CONCAT_INTERNAL(x, y) x##y
 #define CONCAT(x, y) CONCAT_INTERNAL(x, y)

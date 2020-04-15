@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     lexer.lex();
 
     for (const auto &token : lexer.tokens) {
-        // printf("%s\n", token.info().c_str());
+        printf("%s\n", token.info().c_str());
     }
 
     return 0;

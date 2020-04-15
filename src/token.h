@@ -9,9 +9,10 @@ enum Token_Kind {
     // Reserve for single character ASCII tokens
 
     TOK_IDENT = 256,
-    TOK_NUMBER,
-    TOK_STRING,
+    TOK_I64,
+    TOK_STR,
     TOK_ARROW,
+    TOK_DEF_ASSIGN,
     TOK_EOF,
 };
 
@@ -21,10 +22,17 @@ struct File_Position {
 };
 
 struct Token {
+    std::string info() const;
+
     Token_Kind kind;
     File_Position pos;
     const byte *start;
     const byte *end;
 
-    std::string info() const;
+    union {
+        i64 v_i64;
+        f64 v_f64;
+        bool v_bool;
+        Interned_String v_str;
+    };
 };

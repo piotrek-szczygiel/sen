@@ -1,16 +1,23 @@
 #include "lexer.h"
 #include "common.h"
 
+#include <chrono>
 #include <sstream>
 
+namespace chrono = std::chrono;
+
 static inline bool valid_ident_start(byte cc) {
-    return ((cc >= 'A' && cc <= 'Z') ||
-            (cc >= 'a' && cc <= 'z')); // || (cc >= 0xC0));
+    return ((cc >= 'A' && cc <= 'Z') || (cc >= 'a' && cc <= 'z') ||
+            (cc == '_') || (cc >= 0xC0));
 }
 
 static inline bool valid_ident_continuation(byte cc) {
     return ((cc >= 'A' && cc <= 'Z') || (cc >= 'a' && cc <= 'z') ||
-            (cc >= '0' && cc <= '9')); // || (cc >= 0x80));
+            (cc >= '0' && cc <= '9') || (cc == '_') || (cc >= 0x80));
+}
+
+static inline bool valid_number(byte cc) {
+    return (cc >= '0' && cc <= '9');
 }
 
 inline byte Lexer::peek() {
@@ -56,11 +63,25 @@ inline void Lexer::eat_ident() {
     while (valid_ident_continuation(peek())) eat();
 }
 
-inline void Lexer::eat_number() {
-    while (peek() >= '0' && peek() <= '9') eat();
+inline u64 Lexer::eat_number(Token *token, u64 max) {
+    u64 value = 0;
+
+    while (valid_number(peek())) {
+        u64 digit = eat() - '0';
+
+        if (value > (max - digit) / 10) {
+            logger("integer overflow\n");
+            while (valid_number(peek())) eat();
+            break;
+        }
+
+        value = value * 10 + digit;
+    }
+
+    return value;
 }
 
-inline void Lexer::eat_string() {
+inline Interned_String Lexer::eat_string() {
     std::stringstream ss;
 
     bool closed = false;
@@ -99,9 +120,21 @@ inline void Lexer::eat_string() {
     }
 
     if (closed) {
-        logger("ate string: '%s'\n", ss.str().c_str());
+        return intern_string(ss.str());
     } else {
-        ss.clear();
+        return 0;
+    }
+}
+
+Interned_String Lexer::intern_string(const std::string &str) {
+    auto found = interned_map.find(str);
+    if (found == interned_map.end()) {
+        u64 id = interned_vec.size();
+        interned_vec.emplace_back(str);
+        interned_map.emplace(str, id);
+        return id;
+    } else {
+        return found->second;
     }
 }
 
@@ -109,7 +142,14 @@ void Lexer::lex() {
     pos.line = 1;
     pos.column = 1;
 
+    interned_map.clear();
+    interned_vec.clear();
+    // NOTE intern_string() returns 0 on invalid string
+    intern_string("@@@ INVALID STRING @@@");
+
     tokens.clear();
+
+    auto timer_start = std::chrono::system_clock::now();
 
     while (peek()) {
         eat_whitespace();
@@ -119,6 +159,11 @@ void Lexer::lex() {
         token.start = cc;
 
         switch (peek()) {
+        case '\0': {
+            eat();
+            token.kind = TOK_EOF;
+        } break;
+
         case '/': {
             if (peek(1) == '/') {
                 eat(2);
@@ -141,9 +186,13 @@ void Lexer::lex() {
             }
         } break;
 
-        case '\0': {
-            eat();
-            token.kind = TOK_EOF;
+        case ':': {
+            if (peek(1) == '=') {
+                eat(2);
+                token.kind = TOK_DEF_ASSIGN;
+            } else {
+                token.kind = (Token_Kind)eat();
+            }
         } break;
 
         case ';':
@@ -153,8 +202,8 @@ void Lexer::lex() {
         case '}':
         case '.':
         case ',':
-        case ':':
-        case '+': {
+        case '+':
+        case '*': {
             token.kind = (Token_Kind)eat();
         } break;
 
@@ -168,14 +217,14 @@ void Lexer::lex() {
         case '7':
         case '8':
         case '9': {
-            eat_number();
-            token.kind = TOK_NUMBER;
+            token.kind = TOK_I64;
+            token.v_i64 = eat_number(&token, INT64_MAX);
         } break;
 
         case '"': {
             eat();
-            eat_string();
-            token.kind = TOK_STRING;
+            token.kind = TOK_STR;
+            token.v_str = eat_string();
         } break;
 
         default: {
@@ -195,4 +244,12 @@ void Lexer::lex() {
 
         tokens.push_back(token);
     }
+
+    auto timer_stop = chrono::system_clock::now();
+    auto elapsed =
+        chrono::duration_cast<chrono::microseconds>(timer_stop - timer_start);
+    auto ms = (f64)elapsed.count() / 1000.0;
+    f64 kloc = (f64)pos.line / ms;
+
+    logger("lexed %d lines in %.2fms (%.0f lines/ms)\n", pos.line, ms, kloc);
 }
