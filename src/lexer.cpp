@@ -143,6 +143,16 @@ const char *Lexer::unintern_string(Interned_String id) {
     return interned_vec[id].c_str();
 }
 
+void Lexer::print_tokens() {
+    for (const auto &token : tokens) {
+        printf("%s", token.info().c_str());
+        if (token.kind == TOK_IDENT || token.kind == TOK_STR) {
+            printf(" \"%s\"", unintern_string(token.v_str));
+        }
+        printf("\n");
+    }
+}
+
 void Lexer::lex() {
     pos.line = 1;
     pos.column = 1;

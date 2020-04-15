@@ -42,14 +42,7 @@ int main(int argc, char **argv) {
 
     Lexer lexer(input);
     lexer.lex();
-
-    for (const auto &token : lexer.tokens) {
-        printf("%s", token.info().c_str());
-        if (token.kind == TOK_IDENT || token.kind == TOK_STR) {
-            printf(" \"%s\"", lexer.unintern_string(token.v_str));
-        }
-        printf("\n");
-    }
+    lexer.print_tokens();
 
     return 0;
 }

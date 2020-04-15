@@ -23,6 +23,8 @@ struct Lexer {
     Interned_String intern_string(const std::string &str);
     const char *unintern_string(Interned_String id);
 
+    void print_tokens();
+
     const byte *input;
     const byte *cc;
 
