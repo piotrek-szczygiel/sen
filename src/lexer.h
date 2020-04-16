@@ -1,9 +1,13 @@
 #pragma once
-#include "common.h"
-#include "token.h"
 
 #include <unordered_map>
 #include <vector>
+
+#include "common.h"
+#include "token.h"
+
+// Lexer will terminate after reaching this number of errors
+constexpr int MAX_LEXER_ERRORS = 20;
 
 struct Lexer_Error {
     std::string msg;
@@ -12,11 +16,9 @@ struct Lexer_Error {
 
 struct Lexer {
     Lexer(const byte *input) : input(input), cur(input), filename(nullptr) {}
+    Lexer(const byte *input, const char *filename) : input(input), cur(input), filename(filename) {}
 
-    Lexer(const byte *input, const char *filename)
-        : input(input), cur(input), filename(filename) {}
-
-    void lex();
+    bool lex();
 
     byte peek();
     byte peek(int offset);
@@ -26,7 +28,7 @@ struct Lexer {
     void eat_whitespace();
     void eat_ident();
     void eat_number();
-    Interned_String eat_string();
+    void eat_string();
 
     Interned_String intern_string(const std::string &str);
     const char *unintern_string(Interned_String id);

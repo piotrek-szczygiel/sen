@@ -1,15 +1,15 @@
-#include "common.h"
-#include "lexer.h"
-
 #include <cstdio>
 #include <cstdlib>
+
+#include "common.h"
+#include "lexer.h"
 
 static byte *read_whole_file(FILE *file) {
     fseek(file, 0L, SEEK_END);
     u64 file_size = ftell(file);
     rewind(file);
 
-    byte *buf = (byte *)malloc(file_size + 1);
+    auto buf = (byte *)malloc(file_size + 1);
     if (!buf) return nullptr;
 
     u64 read_size = fread(buf, 1, file_size, file);
@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
         return 2;
     }
 
-    const char *filename = argv[1];
+    auto filename = argv[1];
 
     FILE *file;
     auto err = fopen_s(&file, filename, "rb");
@@ -46,9 +46,11 @@ int main(int argc, char **argv) {
     defer { free(input); };
 
     Lexer lexer(input, filename);
-    lexer.lex();
-    lexer.print_tokens();
-    lexer.print_errors();
+
+    if (lexer.lex())
+        lexer.print_tokens();
+    else
+        lexer.print_errors();
 
     return 0;
 }

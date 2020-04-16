@@ -1,10 +1,9 @@
 ---
-Language: Cpp
-BasedOnStyle: LLVM
+BasedOnStyle: Google
 IndentWidth: 4
+ColumnLimit: 100
+---
+Language: Cpp
 
 AllowShortFunctionsOnASingleLine: Inline
-AllowShortBlocksOnASingleLine: true
-AllowShortLoopsOnASingleLine: true
-AllowShortIfStatementsOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
