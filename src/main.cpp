@@ -13,7 +13,10 @@ static byte *read_whole_file(FILE *file) {
     if (!buf) return nullptr;
 
     u64 read_size = fread(buf, 1, file_size, file);
-    if (read_size != file_size) return nullptr;
+    if (read_size != file_size) {
+        free(buf);
+        return nullptr;
+    }
 
     buf[read_size] = 0;
     return buf;
@@ -21,7 +24,7 @@ static byte *read_whole_file(FILE *file) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        logger("usage: %s file", argv[0]);
+        fprintf(stderr, "usage: %s file", argv[0]);
         return 2;
     }
 
@@ -30,21 +33,22 @@ int main(int argc, char **argv) {
     FILE *file;
     auto err = fopen_s(&file, filename, "rb");
     if (err != 0) {
-        logger("unable to open file: %s\n", filename);
+        fprintf(stderr, "unable to open file: %s\n", filename);
         return 1;
     }
+    defer { fclose(file); };
 
     byte *input = read_whole_file(file);
-    fclose(file);
     if (!input) {
-        logger("unable to read file: %s\n", filename);
+        fprintf(stderr, "unable to read file: %s\n", filename);
         return 1;
     }
+    defer { free(input); };
 
-    Lexer lexer(input);
+    Lexer lexer(input, filename);
     lexer.lex();
     lexer.print_tokens();
+    lexer.print_errors();
 
-    free(input);
     return 0;
 }

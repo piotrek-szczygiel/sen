@@ -2,6 +2,7 @@
 #include "common.h"
 
 #include <chrono>
+#include <cstdarg>
 #include <sstream>
 
 namespace chrono = std::chrono;
@@ -63,9 +64,9 @@ inline void Lexer::eat_ident() {
     while (valid_ident_continuation(peek())) eat();
 }
 
-inline void Lexer::eat_number(Token *token) {
-    if (token->kind != TOK_I64) {
-        logger("unimplemented number kind\n");
+inline void Lexer::eat_number() {
+    if (current_tok.kind != TOK_I64) {
+        error("unimplemented number kind");
         return;
     }
 
@@ -76,7 +77,7 @@ inline void Lexer::eat_number(Token *token) {
         u64 digit = eat() - '0';
 
         if (value > (max - digit) / 10) {
-            logger("integer overflow\n");
+            error("integer is too big");
             while (valid_number(peek())) eat();
             break;
         }
@@ -84,7 +85,7 @@ inline void Lexer::eat_number(Token *token) {
         value = value * 10 + digit;
     }
 
-    token->v_i64 = value;
+    current_tok.v_i64 = value;
 }
 
 inline Interned_String Lexer::eat_string() {
@@ -103,7 +104,7 @@ inline Interned_String Lexer::eat_string() {
             case 't': ss << '\t'; break;
             case '0': ss << '\0'; break;
             default:
-                logger("unknown escape character: (%d) %c\n", peek(), peek());
+                error("invalid escape character: \\" + std::string(1, peek()));
                 break;
             }
             eat();
@@ -137,7 +138,7 @@ Interned_String Lexer::intern_string(const std::string &str) {
     auto found = interned_map.find(str);
     if (found == interned_map.end()) {
         u64 id = interned_vec.size();
-        interned_vec.emplace_back(str);
+        interned_vec.push_back(str);
         interned_map.emplace(str, id);
         return id;
     } else {
@@ -150,13 +151,26 @@ const char *Lexer::unintern_string(Interned_String id) {
     return interned_vec[id].c_str();
 }
 
+void Lexer::error(const std::string &msg) {
+    current_tok.end = cur;
+    errors.push_back({msg, current_tok});
+}
+
 void Lexer::print_tokens() {
-    for (const auto &token : tokens) {
-        printf("%s", token.info().c_str());
-        if (token.kind == TOK_IDENT || token.kind == TOK_STR) {
-            printf(" \"%s\"", unintern_string(token.v_str));
+    for (const auto &tok : tokens) {
+        printf("%s", tok.info().c_str());
+        if (tok.kind == TOK_IDENT || tok.kind == TOK_STR) {
+            printf(" \"%s\"", unintern_string(tok.v_str));
         }
         printf("\n");
+    }
+}
+
+void Lexer::print_errors() {
+    for (const auto &err : errors) {
+        if (filename) fprintf(stderr, "%s:", filename);
+        fprintf(stderr, "%d:%d: ", err.tok.pos.line, err.tok.pos.column);
+        fprintf(stderr, "%s\n", err.msg.c_str());
     }
 }
 
@@ -164,26 +178,21 @@ void Lexer::lex() {
     pos.line = 1;
     pos.column = 1;
 
-    interned_map.clear();
-    interned_vec.clear();
     // NOTE eat_string() returns 0 on invalid string
     intern_string("@@@ INVALID STRING @@@");
-
-    tokens.clear();
 
     auto t1 = std::chrono::system_clock::now();
 
     while (peek()) {
         eat_whitespace();
 
-        Token token;
-        token.pos = pos;
-        token.start = cur;
+        current_tok.pos = pos;
+        current_tok.start = cur;
 
         switch (peek()) {
         case '\0': {
             eat();
-            token.kind = TOK_EOF;
+            current_tok.kind = TOK_EOF;
         } break;
 
         case '/': {
@@ -195,25 +204,25 @@ void Lexer::lex() {
                 }
                 continue;
             } else {
-                token.kind = (Token_Kind)eat();
+                current_tok.kind = (Token_Kind)eat();
             }
         } break;
 
         case '-': {
             if (peek(1) == '>') {
                 eat(2);
-                token.kind = TOK_ARROW;
+                current_tok.kind = TOK_ARROW;
             } else {
-                token.kind = (Token_Kind)eat();
+                current_tok.kind = (Token_Kind)eat();
             }
         } break;
 
         case ':': {
             if (peek(1) == '=') {
                 eat(2);
-                token.kind = TOK_DEF_ASSIGN;
+                current_tok.kind = TOK_DEF_ASSIGN;
             } else {
-                token.kind = (Token_Kind)eat();
+                current_tok.kind = (Token_Kind)eat();
             }
         } break;
 
@@ -226,7 +235,7 @@ void Lexer::lex() {
         case ',':
         case '+':
         case '*': {
-            token.kind = (Token_Kind)eat();
+            current_tok.kind = (Token_Kind)eat();
         } break;
 
         case '0':
@@ -239,33 +248,34 @@ void Lexer::lex() {
         case '7':
         case '8':
         case '9': {
-            token.kind = TOK_I64;
-            eat_number(&token);
+            current_tok.kind = TOK_I64;
+            eat_number();
         } break;
 
         case '"': {
             eat();
-            token.kind = TOK_STR;
-            token.v_str = eat_string();
+            current_tok.kind = TOK_STR;
+            current_tok.v_str = eat_string();
         } break;
 
         default: {
             if (valid_ident_start(peek())) {
                 eat_ident();
-                token.v_str = intern_string(std::string(token.start, cur));
-                token.kind = TOK_IDENT;
+                current_tok.v_str =
+                    intern_string(std::string(current_tok.start, cur));
+                current_tok.kind = TOK_IDENT;
             } else {
-                token.kind = TOK_ERR;
-                logger("invalid character: (%d) %c\n", peek(), peek());
+                current_tok.kind = TOK_ERR;
+                error("unexpected character: " + std::string(1, peek()));
                 eat();
             }
         } break;
         }
 
-        token.end = cur;
-        if (token.kind == TOK_EOF) break;
+        current_tok.end = cur;
+        if (current_tok.kind == TOK_EOF) break;
 
-        tokens.push_back(token);
+        tokens.push_back(current_tok);
     }
 
     auto t2 = chrono::system_clock::now();
@@ -273,5 +283,5 @@ void Lexer::lex() {
     auto ms = (f64)elapsed.count() / 1000.0;
     f64 lpms = (f64)pos.line / ms;
 
-    logger("lexed %d lines in %.2fms (%.0f lines/ms)\n", pos.line, ms, lpms);
+    printf("lexed %d lines in %.2fms (%.0f lines/ms)\n", pos.line, ms, lpms);
 }
