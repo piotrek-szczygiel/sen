@@ -24,7 +24,7 @@ static byte *read_whole_file(FILE *file) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "usage: %s file", argv[0]);
+        fprintf(stderr, "usage: sen file");
         return 2;
     }
 
