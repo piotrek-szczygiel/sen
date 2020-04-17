@@ -26,15 +26,24 @@ struct Lexer {
     byte peek();
     byte peek(int offset);
 
-    byte eat();
-    void eat(int length);
+    byte advance();
+    void advance(int length);
+
+    bool match(byte expected);
+    bool match(int offset, byte expected);
+
+    bool is_digit();
+    bool is_ident_start();
+    bool is_ident_continue();
+
+    void discard_line();
 
     void eat_whitespace();
     void eat_number();
     void eat_string();
     void eat_ident();
-    void eat_token_ascii();
-    void eat_token_length(Token_Kind, int length);
+    void eat_one();
+    void eat_two(Token_Kind kind);
 
     void emit(Token token);
 

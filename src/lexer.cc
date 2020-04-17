@@ -9,19 +9,6 @@
 using fmt::print, fmt::format;
 using namespace std::chrono;
 
-static inline bool valid_number(byte b) {
-    return (b >= '0' && b <= '9');
-}
-
-static inline bool valid_ident_start(byte b) {
-    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b == '_') || (b >= 0xC0));
-}
-
-static inline bool valid_ident_continuation(byte b) {
-    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') ||
-            (b == '_') || (b >= 0x80));
-}
-
 bool Lexer::load_file(const std::string& filename_) {
     std::ifstream file(filename_, std::ios::binary);
     if (!file) return false;
@@ -63,40 +50,13 @@ bool Lexer::lex() {
         eat_whitespace();
 
         switch (peek()) {
-            case '\0': eof = true; break;
+            case 0: eof = true; break;
 
-            case '/': {
-                if (peek(1) == '/') {  // Comment
-                    eat(2);
-                    while (peek() != '\n' && peek() != '\r') eat();
-                } else {
-                    eat_token_ascii();
-                }
-            } break;
+            case '/': match(1, '/') ? discard_line() : eat_one(); break;
 
-            case '-': {
-                if (peek(1) == '>') {
-                    eat_token_length(TOK_ARROW, 2);
-                } else {
-                    eat_token_ascii();
-                }
-            } break;
-
-            case ':': {
-                if (peek(1) == '=') {
-                    eat_token_length(TOK_DEF_ASSIGN, 2);
-                } else {
-                    eat_token_ascii();
-                }
-            } break;
-
-            case '*': {
-                if (peek(1) == '*') {
-                    eat_token_length(TOK_POW, 2);
-                } else {
-                    eat_token_ascii();
-                }
-            } break;
+            case '-': match(1, '>') ? eat_two(TOKEN_ARROW) : eat_one(); break;
+            case ':': match(1, '=') ? eat_two(TOKEN_DEF_ASSIGN) : eat_one(); break;
+            case '*': match(1, '*') ? eat_two(TOKEN_POW) : eat_one(); break;
 
             case ';':
             case '(':
@@ -106,7 +66,7 @@ bool Lexer::lex() {
             case '.':
             case ',':
             case '+':
-            case '%': eat_token_ascii(); break;
+            case '%': eat_one(); break;
 
             case '0':
             case '1':
@@ -122,11 +82,14 @@ bool Lexer::lex() {
             case '"': eat_string(); break;
 
             default: {
-                if (valid_ident_start(peek())) {
+                if (is_ident_start()) {
                     eat_ident();
                 } else {
-                    auto token = begin_token(TOK_UNKNOWN);
-                    byte b = eat();
+                    auto token = begin_token(TOKEN_UNKNOWN);
+                    token.valid = false;
+                    byte b = advance();
+                    end_token(token);
+                    emit(token);
                     error(token, format("Unexpected character: '{}' (ASCII {})", (char)b, (int)b));
                 }
             }
@@ -159,8 +122,8 @@ bool Lexer::lex() {
 void Lexer::fill_keywords() {
     auto& t = intern_table;
     keywords = {
-        {t.intern("use"), TOK_USE},
-        {t.intern("fn"), TOK_FN},
+        {t.intern("use"), TOKEN_USE},
+        {t.intern("fn"), TOKEN_FN},
     };
 }
 
@@ -188,26 +151,54 @@ inline byte Lexer::peek(int offset) {
     return *(cursor + offset);
 }
 
-inline byte Lexer::eat() {
+inline byte Lexer::advance() {
     column++;
     return *cursor++;
 }
 
-inline void Lexer::eat(int length) {
+inline void Lexer::advance(int length) {
     column += length;
     cursor += length;
+}
+
+inline bool Lexer::match(byte expected) {
+    return peek() == expected;
+}
+
+inline bool Lexer::match(int offset, byte expected) {
+    return peek(offset) == expected;
+}
+
+inline bool Lexer::is_digit() {
+    byte b = peek();
+    return (b >= '0' && b <= '9');
+}
+
+inline bool Lexer::is_ident_start() {
+    byte b = peek();
+    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b == '_') || (b >= 0xC0));
+}
+
+inline bool Lexer::is_ident_continue() {
+    byte b = peek();
+    return ((b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') ||
+            (b == '_') || (b >= 0x80));
+}
+
+inline void Lexer::discard_line() {
+    while (!match('\n') && !match('\r')) advance();
 }
 
 void Lexer::eat_whitespace() {
     while (1) {
         switch (peek()) {
             case ' ':
-            case '\t': eat(); break;
+            case '\t': advance(); break;
 
             case '\n':
             case '\r': {
-                byte b = eat();
-                if (b + peek() == '\r' + '\n') eat();
+                byte b = advance();
+                if (b + peek() == '\r' + '\n') advance();
                 line++;
                 column = 1;
             } break;
@@ -218,16 +209,16 @@ void Lexer::eat_whitespace() {
 }
 
 void Lexer::eat_number() {
-    auto token = begin_token(TOK_INT);
+    auto token = begin_token(TOKEN_INT);
 
     u64 value = 0;
     u64 max = INT64_MAX;
 
-    while (valid_number(peek())) {
-        u64 digit = eat() - '0';
+    while (is_digit()) {
+        u64 digit = advance() - '0';
 
         if (value > (max - digit) / 10) {
-            while (valid_number(peek())) eat();
+            while (is_digit()) advance();
             end_token(token);
             token.valid = false;
             emit(token);
@@ -244,9 +235,9 @@ void Lexer::eat_number() {
 }
 
 void Lexer::eat_string() {
-    auto token = begin_token(TOK_STR);
+    auto token = begin_token(TOKEN_STR);
 
-    eat();  // Eat "
+    advance();  // Eat "
 
     std::vector<byte> unknown_escapes;
 
@@ -255,26 +246,36 @@ void Lexer::eat_string() {
     while (!closed) {
         switch (peek()) {
             case '\\': {
-                eat();
+                advance();
                 switch (peek()) {
                     case '\\': str.push_back('\\'); break;
                     case '"': str.push_back('"'); break;
                     case 'n': str.push_back('\n'); break;
                     case 't': str.push_back('\t'); break;
-                    case '0': str.push_back('\0'); break;
-                    case '\0': return;
+                    case '0': str.push_back(0); break;
+                    case 0: return;
                     default: unknown_escapes.push_back(peek()); break;
                 }
-                eat();
+                advance();
             } break;
 
             case '"': {
-                eat();
+                advance();
                 closed = true;
             } break;
 
-            case '\0': return;
-            default: str.push_back(eat()); break;
+            case '\n':
+            case '\r': {
+                byte b = advance();
+                if (b + peek() == '\r' + '\n') advance();
+                line++;
+                column = 1;
+
+                str.push_back('\n');
+            } break;
+
+            case 0: return;
+            default: str.push_back(advance()); break;
         }
     }
 
@@ -287,8 +288,8 @@ void Lexer::eat_string() {
 }
 
 void Lexer::eat_ident() {
-    auto token = begin_token(TOK_IDENT);
-    while (valid_ident_continuation(peek())) eat();
+    auto token = begin_token(TOKEN_IDENT);
+    while (is_ident_continue()) advance();
     end_token(token);
     auto str = intern_table.intern(token.str());
     auto found = keywords.find(str);
@@ -300,13 +301,16 @@ void Lexer::eat_ident() {
     emit(token);
 }
 
-inline void Lexer::eat_token_ascii() {
-    eat_token_length((Token_Kind)peek(), 1);
+void Lexer::eat_one() {
+    auto token = begin_token((Token_Kind)peek());
+    advance();
+    end_token(token);
+    emit(token);
 }
 
-void Lexer::eat_token_length(Token_Kind kind, int length) {
+void Lexer::eat_two(Token_Kind kind) {
     auto token = begin_token(kind);
-    eat(length);
+    advance(2);
     end_token(token);
     emit(token);
 }
