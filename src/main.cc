@@ -18,7 +18,11 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    lexer.lex();
+    if (lexer.lex()) {
+        for (const auto& t : lexer.output) {
+            print("{}\n", t);
+        }
+    }
 
     return 0;
 }

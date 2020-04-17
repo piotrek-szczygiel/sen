@@ -18,6 +18,8 @@ struct Lexer {
     bool load_file(const std::string& filename);
     bool lex();
 
+    void fill_keywords();
+
     Token begin_token(Token_Kind kind);
     void end_token(Token& token);
 
@@ -50,6 +52,8 @@ struct Lexer {
 
     int line;
     int column;
+
+    std::unordered_map<Interned, Token_Kind> keywords;
 
     std::vector<Lexer_Diagnostic> errors;
     std::vector<Lexer_Diagnostic> warnings;

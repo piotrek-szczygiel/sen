@@ -34,15 +34,25 @@ bool Lexer::load_file(const std::string& filename_) {
 
     filename = filename_;
 
-    print("Loaded {} bytes to lexer\n", length);
+    print("Loaded {} ({} bytes)\n", filename, length);
     return true;
 }
 
 bool Lexer::lex() {
     cursor = input.data();
 
+    output.clear();
+
+    intern_table.map.clear();
+    intern_table.vec.clear();
+
     line = 1;
     column = 1;
+
+    errors.clear();
+    warnings.clear();
+
+    fill_keywords();
 
     error_limit = false;
 
@@ -80,6 +90,14 @@ bool Lexer::lex() {
                 }
             } break;
 
+            case '*': {
+                if (peek(1) == '*') {
+                    eat_token_length(TOK_POW, 2);
+                } else {
+                    eat_token_ascii();
+                }
+            } break;
+
             case ';':
             case '(':
             case ')':
@@ -88,7 +106,6 @@ bool Lexer::lex() {
             case '.':
             case ',':
             case '+':
-            case '*':
             case '%': eat_token_ascii(); break;
 
             case '0':
@@ -136,11 +153,15 @@ bool Lexer::lex() {
         return false;
     }
 
-    for (const auto& t : output) {
-        print("{}\n", t);
-    }
-
     return true;
+}
+
+void Lexer::fill_keywords() {
+    auto& t = intern_table;
+    keywords = {
+        {t.intern("use"), TOK_USE},
+        {t.intern("fn"), TOK_FN},
+    };
 }
 
 Token Lexer::begin_token(Token_Kind kind) {
@@ -261,7 +282,7 @@ void Lexer::eat_string() {
     emit(token);
 
     for (char escape : unknown_escapes) {
-        warning(token, format("Invalid escape sequence: \\{}", escape));
+        warning(token, format("Invalid escape sequence '\\{}'", escape));
     }
 }
 
@@ -269,7 +290,13 @@ void Lexer::eat_ident() {
     auto token = begin_token(TOK_IDENT);
     while (valid_ident_continuation(peek())) eat();
     end_token(token);
-    token.v_str = intern_table.intern(token.str());
+    auto str = intern_table.intern(token.str());
+    auto found = keywords.find(str);
+    if (found != keywords.end()) {
+        token.kind = found->second;
+    } else {
+        token.v_str = str;
+    }
     emit(token);
 }
 

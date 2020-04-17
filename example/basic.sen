@@ -1,0 +1,8 @@
+use std;
+
+fn main() {
+    a := 10;
+    b := (a * 10) ** 2;
+
+    std.println("Result: {}", b);
+}

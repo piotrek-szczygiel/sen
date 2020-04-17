@@ -18,8 +18,15 @@ enum Token_Kind {
     TOK_INT,
     TOK_STR,
 
+    TOK_POW,
+
     TOK_ARROW,
     TOK_DEF_ASSIGN,
+
+    // Keywords
+
+    TOK_USE,
+    TOK_FN,
 };
 
 struct Token {
@@ -47,9 +54,15 @@ struct fmt::formatter<Token> {
     template <typename FormatContext>
     auto format(const Token& t, FormatContext& ctx) {
         static const std::unordered_map<Token_Kind, std::string> NAMES = {
-            {TOK_UNKNOWN, "TOK_UNKNOWN"}, {TOK_IDENT, "TOK_IDENT"},
-            {TOK_INT, "TOK_INT"},         {TOK_STR, "TOK_STR"},
-            {TOK_ARROW, "TOK_ARROW"},     {TOK_DEF_ASSIGN, "TOK_DEF_ASSIGN"},
+            {TOK_UNKNOWN, "TOK_UNKNOWN"},
+            {TOK_IDENT, "TOK_IDENT"},
+            {TOK_INT, "TOK_INT"},
+            {TOK_STR, "TOK_STR"},
+            {TOK_POW, "TOK_POW"},
+            {TOK_ARROW, "TOK_ARROW"},
+            {TOK_DEF_ASSIGN, "TOK_DEF_ASSIGN"},
+            {TOK_USE, "TOK_USE"},
+            {TOK_FN, "TOK_FN"},
         };
 
         std::string name;
@@ -60,6 +73,6 @@ struct fmt::formatter<Token> {
             name = found->second;
         }
 
-        return format_to(ctx.out(), "{}: '{}'", name, t.str());
+        return format_to(ctx.out(), "{:<20}{}", name, t.str());
     }
 };
