@@ -5,14 +5,15 @@ Sen programming language (Work in Progress)
 ## Building
 
 ```
-$ meson out
-$ ninja -C out
-$ ./out/src/sen
+$ mkdir out && cd out
+$ cmake ..
+$ cmake --build .
+$ ./sen
 ```
 
 If you want to use Visual Studio on Windows
 
 ```
-> env x64
-> run
+> env vs
+> run release
 ```

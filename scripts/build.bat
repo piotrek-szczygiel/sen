@@ -1,34 +1,35 @@
 @echo off
 set root=%~dp0..
 
-if "%1" == "" goto :default
-
-if /i %1 == debug (
+if /i "%1" == "debug" (
     set mode=debug
-    goto :get_args
-) else if /i %1 == release (
+) else if /i "%1" == "release" (
     set mode=release
-    goto :get_args
+) else if "%1" == "" (
+    set mode=debug
+) else (
+    echo Unknown configuration type: %1
+    exit /b 1
 )
 
-:default
-set mode=debug
-set ninja_args=%*
-goto :after_args
+set out=%root%\out\%mode%
 
-:get_args
-for /f "tokens=1,* delims= " %%a in ("%*") do set ninja_args=%%b
-
-:after_args
-pushd %root%\out\%mode% 2> NUL && goto :build
-call %root%\scripts\configure.bat %mode% || exit /b 1
-pushd %root%\out\%mode% || exit /b 1
+call :configure
+call :build
+exit /b %errorlevel%
 
 :build
-ninja %ninja_args% || goto :error
-popd
-exit /b
+cmake --build "%out%"
+exit /b %errorlevel%
 
-:error
+:configure
+if exist "%out%" exit /b
+
+if %mode% == debug   set capitalized=Debug
+if %mode% == release set capitalized=Release
+
+mkdir "%out%"
+pushd "%out%"
+cmake "%root%" -G Ninja -DCMAKE_BUILD_TYPE=%capitalized%
 popd
-exit /b 1
+exit /b %errorlevel%

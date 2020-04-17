@@ -4,52 +4,55 @@
 #include <vector>
 
 #include "common.h"
+#include "intern.h"
 #include "token.h"
 
-// Lexer will terminate after reaching this number of errors
 constexpr int MAX_LEXER_ERRORS = 20;
 
-struct Lexer_Error {
+struct Lexer_Diagnostic {
     std::string msg;
-    Token tok;
+    Token token;
 };
 
 struct Lexer {
-    Lexer(const byte *input) : input(input), cur(input), filename(nullptr) {}
-    Lexer(const byte *input, const char *filename) : input(input), cur(input), filename(filename) {}
-
+    bool load_file(const std::string& filename);
     bool lex();
+
+    Token begin_token(Token_Kind kind);
+    void end_token(Token& token);
 
     byte peek();
     byte peek(int offset);
+
     byte eat();
-    void eat(int offset);
+    void eat(int length);
 
     void eat_whitespace();
-    void eat_ident();
     void eat_number();
     void eat_string();
+    void eat_ident();
+    void eat_token_ascii();
+    void eat_token_length(Token_Kind, int length);
 
-    Interned_String intern_string(const std::string &str);
-    const char *unintern_string(Interned_String id);
+    void emit(Token token);
 
-    void error(const std::string &msg);
-    void print_tokens();
-    void print_errors();
+    void error(Token token, const std::string& msg);
+    void warning(Token token, const std::string& msg);
 
-    const byte *input;
-    const byte *cur;
+    std::string filename;
 
-    const char *filename;
+    std::vector<byte> input;
+    std::vector<Token> output;
 
-    Token current_tok;
+    Intern_Table intern_table;
 
-    File_Position pos;
+    byte* cursor;
 
-    std::unordered_map<std::string, Interned_String> interned_map;
-    std::vector<std::string> interned_vec;
+    int line;
+    int column;
 
-    std::vector<Token> tokens;
+    std::vector<Lexer_Diagnostic> errors;
+    std::vector<Lexer_Diagnostic> warnings;
 
-    std::vector<Lexer_Error> errors;
+    bool error_limit;
 };
