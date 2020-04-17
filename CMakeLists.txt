@@ -20,8 +20,7 @@ else()
 endif()
 
 find_package(fmt CONFIG REQUIRED)
-target_link_libraries(sen PRIVATE fmt::fmt-header-only)
-target_compile_definitions(sen PRIVATE FMT_SHARED)
+target_link_libraries(sen PRIVATE fmt::fmt)
 
 set_target_properties(sen PROPERTIES
     CXX_STANDARD 17

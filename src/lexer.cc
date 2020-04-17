@@ -1,6 +1,6 @@
 #include "lexer.h"
 
-#include <fmt/format.h>
+#include <fmt/core.h>
 
 #include <chrono>
 #include <fstream>
@@ -117,11 +117,11 @@ bool Lexer::lex() {
     }
 
     auto time_end = system_clock::now();
-    auto elapsed = duration_cast<microseconds>(time_end - time_begin);
-    auto ms = (f64)elapsed.count() / 1000.0;
+    auto elapsed = duration_cast<nanoseconds>(time_end - time_begin);
+    auto ms = (f64)elapsed.count() / 1000'000.0;
     f64 lines_per_ms = (f64)line / ms;
 
-    print("Lexed {} lines in {}ms ({} lines/ms)\n", line, ms, lines_per_ms);
+    print("Lexed {} lines in {:.1f}ms ({:.1f} lines/ms)\n", line, ms, lines_per_ms);
 
     for (const auto& e : errors) {
         print("{}:{}:{}: error: {}\n", filename, e.token.line_begin, e.token.column_begin, e.msg);

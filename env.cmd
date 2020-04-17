@@ -3,12 +3,15 @@
 setlocal
 set PATH=%~dp0scripts;%PATH%
 
-if "%1" == "vs" goto :vs
+if "%CXX%" == "" goto :search
 
-cmd.exe /k set prompt=(sen) $P$G
+cmd.exe /k set prompt=(sen %CXX%) $P$G
 exit /b
 
-:vs
+:search
+set CXX=cl
+if /i "%1" == "clang" set CXX=clang-cl
+
 for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath`) do (
     if exist "%%i" (
         set vcvarsall=%%i\VC\Auxiliary\Build\vcvarsall.bat
@@ -17,13 +20,9 @@ for /f "usebackq tokens=*" %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio
 
 if "%vcvarsall%" == "" goto :error
 
-set CXX=cl
-
-cmd.exe /k set prompt=(sen msvc) $P$G ^&^& call "%vcvarsall%" x64
+cmd.exe /k set prompt=(sen %CXX%) $P$G ^&^& call "%vcvarsall%" x64
 exit /b
 
 :error
 echo Unable to find Visual Studio installation
-echo CMake will try to use other installed compilers
-echo Set CC or CXX environment variable to manually specify the compiler
-cmd.exe /k set prompt=(sen) $P$G
+echo Set CXX environment variable to manually specify the compiler
