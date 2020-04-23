@@ -13,7 +13,7 @@ add_executable(sen
 
 if(MSVC)
     string(REGEX REPLACE "/GR|/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    target_compile_options(sen PRIVATE /FC /GR- /EHs-c- /W4)
+    target_compile_options(sen PRIVATE /FC /GR- /EHs-c- /W4 /WX)
 else()
     target_compile_options(sen PRIVATE -Wall -Wextra -pedantic -Werror)
 endif()
