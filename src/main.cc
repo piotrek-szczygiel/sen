@@ -1,7 +1,4 @@
-#include <stdio.h>
-
-#define PS_MEM_DEBUG
-#include "ps.h"
+#include "ps.hh"
 
 int main() {
     defer(mem_check_dump());
