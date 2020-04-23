@@ -19,8 +19,6 @@ using i64 = int64_t;
 using u8 = uint8_t;
 
 // Heap definitions
-#pragma region
-
 void mem_check_dump();
 
 #define mem_alloc(count) _mem_alloc((count), __FILE__, __LINE__)
@@ -31,10 +29,7 @@ void* _mem_alloc(usize size, const char* file, int line);
 void _mem_free(void* ptr, const char* file, int line);
 void* _mem_realloc(void* old_ptr, usize old_size, usize new_size, const char* file, int line);
 
-#pragma endregion
-
 // Defer macro
-#pragma region
 template <typename F>
 struct Defer_Helper {
     F f;
@@ -51,10 +46,8 @@ Defer_Helper<F> defer_helper_func(F f) {
 #define DEFER_2(x, y) DEFER_1(x, y)
 #define DEFER_3(x) DEFER_2(x, __COUNTER__)
 #define defer(code) auto DEFER_3(_defer_) = defer_helper_func([&]() { code; })
-#pragma endregion
 
 // List
-#pragma region
 template <typename T>
 struct List {
     void push(const T& item) {
@@ -68,8 +61,7 @@ struct List {
     }
 
     void resize(usize new_length) {
-        assert(list);
-        grow(list, new_length);
+        grow(new_length);
         length = new_length;
     }
 
@@ -104,11 +96,8 @@ void list_free(List<T>* list) {
     if (list->items) mem_free(list->items);
     mem_free(list);
 }
-#pragma endregion
 
 // Hashmap
-#pragma region
-
 usize hm_fn_hash(const char* key);
 bool hm_fn_eq(const char* k1, const char* k2);
 
@@ -206,4 +195,3 @@ void hm_free(Hash_Map<K, V>* hm) {
     mem_free(hm->table);
     mem_free(hm);
 }
-#pragma endregion

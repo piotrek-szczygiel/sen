@@ -30,8 +30,6 @@ bool hm_fn_eq(usize k1, usize k2) {
 }
 
 // Debug allocator implementation
-#pragma region
-
 #ifdef PS_MEM_DEBUG
 struct _mem_entry {
     usize ptr;
@@ -47,7 +45,7 @@ constexpr usize _mem_entry_size = 16;
 static _mem_entry* _mem_allocations[_mem_entry_size] = {0};
 
 void mem_check_dump() {
-    for (int i = 0; i < _mem_entry_size; i++) {
+    for (usize i = 0; i < _mem_entry_size; i++) {
         auto entry = _mem_allocations[i];
         while (entry) {
             const char* info = entry->freed ? (entry->reallocated ? "REALLOCATED" : "FREED") : "LEAKED";
@@ -98,8 +96,8 @@ void* _mem_alloc(usize size, const char* file, int line) {
         }
     }
 #else
-    (file);
-    (line);
+    (void)file;
+    (void)line;
 #endif
 
     return ptr;
@@ -122,8 +120,8 @@ void _mem_free(void* ptr, const char* file, int line) {
     }
     if (!found) fprintf(stderr, "%s:%d: freeing memory before using at %p\n", file, line, ptr);
 #else
-    (file);
-    (line);
+    (void)file;
+    (void)line;
 #endif
 
     free(ptr);
@@ -141,9 +139,7 @@ void* _mem_realloc(void* old_ptr, usize old_size, usize new_size, const char* fi
         auto ptr = old_ptr;
         bool found = false;
         auto entry = _mem_allocations[(usize)ptr % _mem_entry_size];
-        _mem_entry* prev = nullptr;
         while (entry) {
-            prev = entry;
             if (entry->ptr == (usize)ptr) {
                 found = true;
                 entry->size = new_size;
@@ -200,4 +196,3 @@ void* _mem_realloc(void* old_ptr, usize old_size, usize new_size, const char* fi
 
     return new_ptr;
 }
-#pragma endregion
