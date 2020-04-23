@@ -9,18 +9,20 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(sen
     src/main.cc
-    src/lexer.cc
-    src/intern.cc
 )
 
 if(MSVC)
-    target_compile_options(sen PRIVATE /W4 /WX)
+    string(REGEX REPLACE "/GR|/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    target_compile_options(sen PRIVATE /FC /GR- /EHs-c- /W4)
 else()
     target_compile_options(sen PRIVATE -Wall -Wextra -pedantic -Werror)
 endif()
 
-find_package(fmt CONFIG REQUIRED)
-target_link_libraries(sen PRIVATE fmt::fmt)
+# find_package(LLVM REQUIRED CONFIG)
+# target_include_directories(sen PRIVATE ${LLVM_INCLUDE_DIRS})
+# target_compile_definitions(sen PRIVATE ${LLVM_DEFINITIONS})
+# llvm_map_components_to_libnames(llvm_libs core native)
+# target_link_libraries(sen PRIVATE ${llvm_libs})
 
 set_target_properties(sen PROPERTIES
     CXX_STANDARD 17

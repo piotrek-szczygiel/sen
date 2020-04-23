@@ -1,28 +1,20 @@
-#include <fmt/core.h>
+#include <stdio.h>
 
-#include "lexer.h"
+#include "ps.h"
 
-using fmt::print;
+int main() {
+    auto hm = dict_create<int>(1);
+    defer(dict_free(hm));
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        print("Usage: sen <file>\n");
-        return 2;
-    }
+    dict_put(hm, "siemano", 666);
+    dict_put(hm, "kolano", 2137);
 
-    const char* filename = argv[1];
+    dict_put(hm, "siemano", 123);
+    dict_put(hm, "essa", 20);
 
-    Lexer lexer;
-    if (!lexer.load_file(filename)) {
-        print("Unable to load {}\n", filename);
-        return 1;
-    }
-
-    if (lexer.lex()) {
-        for (const auto& t : lexer.output) {
-            print("{}\n", t);
-        }
-    }
+    printf("%d\n", *dict_get(hm, "siemano"));
+    printf("%d\n", *dict_get(hm, "kolano"));
+    printf("%d\n", *dict_get(hm, "essa"));
 
     return 0;
 }
