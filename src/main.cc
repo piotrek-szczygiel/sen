@@ -4,6 +4,6 @@
 #include "ps.h"
 
 int main() {
-    mem_check_dump();
+    defer(mem_check_dump());
     return 0;
 }
