@@ -8,7 +8,6 @@ project(sen
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(sen
-    src/ps.cc
     src/main.cc
 )
 
